@@ -1,0 +1,294 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>GVT</title>
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/loading.css">
+  </head>
+  <body>
+    <div id="app">
+      <div id="loading" class="loading">
+        Loading&#8230;  
+      </div>
+      <div id="header">
+          <p>
+            <b>GVT</b> &mdash; 
+            Graphviz Vizualisation Tool v0.1a
+            &mdash; 
+            Built with
+            <a href="https://github.com/mdaines/viz.js">Viz.js</a>.
+            & 
+            <a href="https://github.com/ajaxorg/ace">Ace</a>
+        </p> 
+      </div>
+      <div id="panes" class="split split-horizontal">
+        <div id="editor" class="split"># http://www.graphviz.org/content/cluster
+
+            digraph G {
+
+                subgraph cluster_0 {
+                    style=filled;
+                    color=lightgrey;
+                    node [style=filled,color=white];
+                    a0 -> a1 -> a2 -> a3;
+                    label = "process #1";
+                }
+
+                subgraph cluster_1 {
+                    node [style=filled];
+                    b0 -> b1 -> b2 -> b3;
+                    label = "process #2";
+                    color=blue
+                }
+                start -> a0;
+                start -> b0;
+                a1 -> b3;
+                b2 -> a3;
+                a3 -> a0;
+                a3 -> end;
+                b3 -> end;
+
+                start [shape=Mdiamond];
+                end [shape=Msquare];
+            }
+        </div>
+        <div id="graph" class="split" >
+          <div id="options">
+            <label id="engine" style="visibility:hidden;">
+              Engine:
+              <select style="visibility:hidden;">
+                <option>circo</option>
+                <option selected>dot</option>
+                <option>fdp</option>
+                <option>neato</option>
+                <option>osage</option>
+                <option>twopi</option>
+              </select>
+            </label>
+            
+            <label id="format" style="visibility:hidden;">
+              Format:
+              <select>
+                <option selected>svg</option>
+                <option>png-image-element</option>
+                <option>json</option>
+                <option>xdot</option>
+                <option>plain</option>
+                <option>ps</option>
+              </select>
+            </label>
+            
+            <label id="raw" style="visibility:hidden;">
+              <input type="checkbox"> Show raw output
+            </label>
+            
+            <label style="color: #fff;">
+              <input type="file" id="inputfile" name="inputfile">
+            </label>
+          </div>
+          <div id="output">
+            <div id="error" style="visibility:hidden;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="./js/viz.js"></script>
+    <script src="./js/full.render.js"></script>
+    <script src="./js/fabric.min.js"></script>
+    <script src="./js/split.min.js"></script>
+    <script src="./js/svg-pan-zoom.min.js"></script>
+    
+
+    <script src="./js/ace-editor/src/ace.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+      var editor = ace.edit("editor");
+      editor.setTheme("ace/theme/monokai");
+      editor.session.setMode("ace/mode/dot");
+      
+      
+      
+
+    var beforeUnloadMessage = null;
+
+    var resizeEvent = new Event("paneresize");
+    Split(['#editor', '#graph'], {
+      sizes: [25, 75],
+      onDragEnd: function() { 
+        var svgOutput = document.getElementById("svg_output");
+        if (svgOutput != null) {
+          svgOutput.dispatchEvent(resizeEvent);
+        }
+      }
+    });
+
+    var parser = new DOMParser();
+    var result;
+    
+    function updateGraph() 
+    {
+        document.querySelector("#output").classList.add("working");
+        document.querySelector("#output").classList.remove("error");
+        
+        var params = {
+            src: editor.getSession().getDocument().getValue(),
+            options: {
+                engine: document.querySelector("#engine select").value,
+                format: document.querySelector("#format select").value
+            }
+        };
+        var viz = new Viz();
+    
+        viz.renderSVGElement(params.src)
+        .then(function(element) {
+            document.querySelector("#output").classList.remove("working");
+            document.querySelector("#output").classList.remove("error");
+        
+            result = element;
+            console.log(element)
+            updateOutput();
+
+        })
+        .catch(err => {
+            // Create a new Viz instance (@see Caveats page for more info)
+            viz = new Viz();
+
+            // Possibly display the error
+            console.error(err);
+            document.querySelector("#output").classList.remove("working");
+            document.querySelector("#output").classList.add("error");
+        
+            var message = err.message === undefined ? "An error occurred while processing the graph input." : err.message;
+            /*
+            var error = document.querySelector("#error");
+            while (error.firstChild) 
+            {
+                error.removeChild(error.firstChild);
+            }
+        
+            document.querySelector("#error").appendChild(document.createTextNode(message)).addEventListener("click", function(event){
+                event.preventDefault()
+            });        
+            */
+        });
+
+      
+      
+      
+      // Instead of asking for png-image-element directly, which we can't do in a worker,
+      // ask for SVG and convert when updating the output.
+      
+      if (params.options.format == "png-image-element") {
+        params.options.format = "svg";
+      }
+
+    }
+    
+    function updateOutput() {
+      var graph = document.querySelector("#output");
+
+      var svg = graph.querySelector("svg");
+      if (svg) {
+        graph.removeChild(svg);
+      }
+
+      var text = graph.querySelector("#text");
+      if (text) {
+        graph.removeChild(text);
+      }
+
+      var img = graph.querySelector("img");
+      if (img) {
+        graph.removeChild(img);
+      }
+      
+      if (!result) {
+        return;
+      }
+      
+      if (document.querySelector("#format select").value == "svg" && !document.querySelector("#raw input").checked) {
+        var svg = result;
+        svg.id = "svg_output";
+        graph.appendChild(svg);
+
+        panZoom = svgPanZoom(svg, {
+          zoomEnabled: true,
+          controlIconsEnabled: true,
+          fit: true,
+          center: true,
+          minZoom: 0.1
+        });
+
+        svg.addEventListener('paneresize', function(e) {
+          panZoom.resize();
+        }, false);
+        window.addEventListener('resize', function(e) {
+          panZoom.resize();
+        });
+      } else if (document.querySelector("#format select").value == "png-image-element") {
+        var image = Viz.svgXmlToPngImageElement(result);
+        graph.appendChild(image);
+      } else {
+        var text = document.createElement("div");
+        text.id = "text";
+        text.appendChild(document.createTextNode(result));
+        graph.appendChild(text);
+      }
+    }
+
+    editor.on("change", function() {
+      updateGraph();
+      beforeUnloadMessage = "Your changes will not be saved.";
+    });
+    
+    window.addEventListener("beforeunload", function(e) {
+      return beforeUnloadMessage;
+    });
+
+    window.addEventListener('load', function () {
+      var loading = document.querySelector("#loading");
+      loading.style.visibility = "hidden";
+
+}, false);
+    
+    document.querySelector("#engine select").addEventListener("change", function() {
+      updateGraph();
+    });
+
+    document.querySelector("#format select").addEventListener("change", function() {
+      if (document.querySelector("#format select").value === "svg") {
+        document.querySelector("#raw").classList.remove("disabled");
+        document.querySelector("#raw input").disabled = false;
+      } else {
+        document.querySelector("#raw").classList.add("disabled");
+        document.querySelector("#raw input").disabled = true;
+      }
+      
+      updateGraph();
+    });
+
+    document.querySelector("#raw input").addEventListener("change", function() {
+      updateOutput();
+    });
+    
+    updateGraph();
+    
+    document.querySelector("#inputfile").addEventListener('change', function() 
+      {
+        var loading = document.querySelector("#loading");
+        loading.style.visibility = "visible";
+        var fr = new FileReader();
+        fr.onload = function()
+        {
+          editor.setValue(fr.result, 1);
+          loading.style.visibility = "hidden";
+        }
+  
+        fr.readAsText(this.files[0]);
+      })
+
+    </script>
+    
+  </body>
+</html>
