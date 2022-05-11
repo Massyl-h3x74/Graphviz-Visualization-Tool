@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
   <head>
@@ -183,6 +182,13 @@
         params.options.format = "svg";
       }
 
+      var elements = document.getElementsByTagName("parsererror");
+      if(elements.length > 0)
+      {
+        elements.forEach(element => {
+            element.style.visibility = "hidden";
+        });
+      } 
     }
 
     function updateOutput() {
@@ -211,7 +217,13 @@
         var svg = result;
         svg.id = "svg_output";
         graph.appendChild(svg);
-
+        var elements = document.getElementsByTagName("parsererror");
+      if(elements.length > 0)
+      {
+        elements.forEach(element => {
+          element.style.visibility = "hidden";
+        });
+       } 
         panZoom = svgPanZoom(svg, {
           zoomEnabled: true,
           controlIconsEnabled: true,
@@ -235,11 +247,26 @@
         text.appendChild(document.createTextNode(result));
         graph.appendChild(text);
       }
+
+      var elements = document.getElementsByTagName("parsererror");
+      if(elements.length > 0)
+      {
+        elements.forEach(element => {
+            element.style.visibility = "hidden";
+        });
+      }  
     }
 
     editor.on("change", function() {
       updateGraph();
       beforeUnloadMessage = "Your changes will not be saved.";
+      var elements = document.getElementsByTagName("parsererror");
+      if(elements.length > 0)
+      {
+        elements.forEach(element => {
+            element.style.visibility = "hidden";
+        });
+      } 
     });
 
     window.addEventListener("beforeunload", function(e) {
