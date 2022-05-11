@@ -10,18 +10,18 @@
   <body>
     <div id="app">
       <div id="loading" class="loading">
-        Loading&#8230;  
+        Loading&#8230;
       </div>
       <div id="header">
           <p>
-            <b>GVT</b> &mdash; 
+            <b>GVT</b> &mdash;
             Graphviz Vizualisation Tool v0.1a
-            &mdash; 
+            &mdash;
             Built with
             <a href="https://github.com/mdaines/viz.js">Viz.js</a>.
-            & 
+            &
             <a href="https://github.com/ajaxorg/ace">Ace</a>
-        </p> 
+        </p>
       </div>
       <div id="panes" class="split split-horizontal">
         <div id="editor" class="split"># http://www.graphviz.org/content/cluster
@@ -67,7 +67,7 @@
                 <option>twopi</option>
               </select>
             </label>
-            
+
             <label id="format" style="visibility:hidden;">
               Format:
               <select>
@@ -79,11 +79,11 @@
                 <option>ps</option>
               </select>
             </label>
-            
+
             <label id="raw" style="visibility:hidden;">
               <input type="checkbox"> Show raw output
             </label>
-            
+
             <label style="color: #fff;">
               <input type="file" id="inputfile" name="inputfile">
             </label>
@@ -99,23 +99,23 @@
     <script src="./js/fabric.min.js"></script>
     <script src="./js/split.min.js"></script>
     <script src="./js/svg-pan-zoom.min.js"></script>
-    
+
 
     <script src="./js/ace-editor/src/ace.js" type="text/javascript" charset="utf-8"></script>
     <script>
       var editor = ace.edit("editor");
       editor.setTheme("ace/theme/monokai");
       editor.session.setMode("ace/mode/dot");
-      
-      
-      
+
+
+
 
     var beforeUnloadMessage = null;
 
     var resizeEvent = new Event("paneresize");
     Split(['#editor', '#graph'], {
       sizes: [25, 75],
-      onDragEnd: function() { 
+      onDragEnd: function() {
         var svgOutput = document.getElementById("svg_output");
         if (svgOutput != null) {
           svgOutput.dispatchEvent(resizeEvent);
@@ -125,12 +125,12 @@
 
     var parser = new DOMParser();
     var result;
-    
-    function updateGraph() 
+
+    function updateGraph()
     {
-        document.querySelector("#output").classList.add("working");
-        document.querySelector("#output").classList.remove("error");
-        
+        //document.querySelector("#output").classList.add("working");
+        //document.querySelector("#output").classList.remove("error");
+
         var params = {
             src: editor.getSession().getDocument().getValue(),
             options: {
@@ -139,12 +139,12 @@
             }
         };
         var viz = new Viz();
-    
+
         viz.renderSVGElement(params.src)
         .then(function(element) {
-            document.querySelector("#output").classList.remove("working");
-            document.querySelector("#output").classList.remove("error");
-        
+            //document.querySelector("#output").classList.remove("working");
+            //document.querySelector("#output").classList.remove("error");
+
             result = element;
             console.log(element)
             updateOutput();
@@ -156,35 +156,35 @@
 
             // Possibly display the error
             console.error(err);
-            document.querySelector("#output").classList.remove("working");
-            document.querySelector("#output").classList.add("error");
-        
-            var message = err.message === undefined ? "An error occurred while processing the graph input." : err.message;
+            //document.querySelector("#output").classList.remove("working");
+            //document.querySelector("#output").classList.add("error");
+
+            //var message = err.message === undefined ? "An error occurred while processing the graph input." : err.message;
             /*
             var error = document.querySelector("#error");
-            while (error.firstChild) 
+            while (error.firstChild)
             {
                 error.removeChild(error.firstChild);
             }
-        
+
             document.querySelector("#error").appendChild(document.createTextNode(message)).addEventListener("click", function(event){
                 event.preventDefault()
-            });        
+            });
             */
         });
 
-      
-      
-      
+
+
+
       // Instead of asking for png-image-element directly, which we can't do in a worker,
       // ask for SVG and convert when updating the output.
-      
+
       if (params.options.format == "png-image-element") {
         params.options.format = "svg";
       }
 
     }
-    
+
     function updateOutput() {
       var graph = document.querySelector("#output");
 
@@ -202,11 +202,11 @@
       if (img) {
         graph.removeChild(img);
       }
-      
+
       if (!result) {
         return;
       }
-      
+
       if (document.querySelector("#format select").value == "svg" && !document.querySelector("#raw input").checked) {
         var svg = result;
         svg.id = "svg_output";
@@ -241,7 +241,7 @@
       updateGraph();
       beforeUnloadMessage = "Your changes will not be saved.";
     });
-    
+
     window.addEventListener("beforeunload", function(e) {
       return beforeUnloadMessage;
     });
@@ -251,7 +251,7 @@
       loading.style.visibility = "hidden";
 
 }, false);
-    
+
     document.querySelector("#engine select").addEventListener("change", function() {
       updateGraph();
     });
@@ -264,17 +264,17 @@
         document.querySelector("#raw").classList.add("disabled");
         document.querySelector("#raw input").disabled = true;
       }
-      
+
       updateGraph();
     });
 
     document.querySelector("#raw input").addEventListener("change", function() {
       updateOutput();
     });
-    
+
     updateGraph();
-    
-    document.querySelector("#inputfile").addEventListener('change', function() 
+
+    document.querySelector("#inputfile").addEventListener('change', function()
       {
         var loading = document.querySelector("#loading");
         loading.style.visibility = "visible";
@@ -284,11 +284,11 @@
           editor.setValue(fr.result, 1);
           loading.style.visibility = "hidden";
         }
-  
+
         fr.readAsText(this.files[0]);
       })
 
     </script>
-    
+
   </body>
 </html>
