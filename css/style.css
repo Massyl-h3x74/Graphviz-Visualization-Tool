@@ -1,3 +1,6 @@
+parsererror {
+  visibility:hidden;
+}
 #app {
   display: flex;
   display: -webkit-flex;
